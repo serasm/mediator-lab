@@ -27,7 +27,7 @@ jobs:
           
           mkdir -p coverage
           
-          find backend \( \
+          find Mediator \( \
             -name '*.Tests.csproj' \
           ) -print0 |
             while IFS= read -r -d '' test_project; do
