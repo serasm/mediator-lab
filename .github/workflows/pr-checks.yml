@@ -42,7 +42,7 @@ jobs:
             return 1
           }
 
-          find backend -name '*.Tests.csproj' -print0 |
+          find Mediator -name '*.Tests.csproj' -print0 |
             while IFS= read -r -d '' test_project; do
               project_name=$(basename "$test_project" .UnitTests.csproj)
 
