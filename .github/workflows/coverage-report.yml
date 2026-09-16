@@ -18,8 +18,8 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - run: dotnet restore backend/EventDrivenDddReference.sln
-      - run: dotnet build backend/EventDrivenDddReference.sln --configuration Release --no-restore
+      - run: dotnet restore ../Mediator/Mediator.sln
+      - run: dotnet build ../Mediator/Mediator.sln --configuration Release --no-restore
 
       - name: Run tests with coverage
         run: |
@@ -28,8 +28,7 @@ jobs:
           mkdir -p coverage
           
           find backend \( \
-            -name '*.UnitTests.csproj' \
-            -o -name '*.IntegrationTests.csproj' \
+            -name '*.Tests.csproj' \
           ) -print0 |
             while IFS= read -r -d '' test_project; do
               echo "Running tests for: $test_project"
