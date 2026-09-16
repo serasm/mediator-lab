@@ -1,4 +1,5 @@
-using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Mediator.Core;
 using Mediator.Core.Requests;
 
@@ -13,7 +14,7 @@ public class MediatorBasic : IMediator
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
-    public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+    public Task<TResponse> SendAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
     {
         var requestType = request.GetType();
         var responseType = typeof(TResponse);
@@ -29,10 +30,18 @@ public class MediatorBasic : IMediator
                            ?? throw new InvalidOperationException(
                                $"No handle method registered for type {handlerType.Name}");
 
-        var result = handleMethod.Invoke(
-            handler,
-            [request, cancellationToken]);
+        try
+        {
+            var result = handleMethod.Invoke(
+                handler,
+                [request, cancellationToken]);
 
-        return (Task<TResponse>)result!;
+            return (Task<TResponse>)result!;
+        }
+        catch (TargetInvocationException e) when (e.InnerException is not null)
+        {
+            ExceptionDispatchInfo.Capture(e.InnerException).Throw();
+            throw;
+        }
     }
 }

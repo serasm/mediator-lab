@@ -6,6 +6,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mediator.Basic", "Mediator.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mediator.HandlersCache", "Mediator.HandlersCache\Mediator.HandlersCache.csproj", "{8F6F53CE-59B5-4581-B81E-673A68CD9E28}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mediator.HandlersCache.Tests", "Tests\Mediator.HandlersCache.Tests\Mediator.HandlersCache.Tests.csproj", "{43A9942F-4832-4BF8-A50A-6CB71BFD993C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mediator.Basic.Tests", "Tests\Mediator.Basic.Tests\Mediator.Basic.Tests.csproj", "{422EFBFB-BBE2-412E-9A4B-05D5AC64FA8B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +28,13 @@ Global
 		{8F6F53CE-59B5-4581-B81E-673A68CD9E28}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8F6F53CE-59B5-4581-B81E-673A68CD9E28}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8F6F53CE-59B5-4581-B81E-673A68CD9E28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43A9942F-4832-4BF8-A50A-6CB71BFD993C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43A9942F-4832-4BF8-A50A-6CB71BFD993C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43A9942F-4832-4BF8-A50A-6CB71BFD993C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43A9942F-4832-4BF8-A50A-6CB71BFD993C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{422EFBFB-BBE2-412E-9A4B-05D5AC64FA8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{422EFBFB-BBE2-412E-9A4B-05D5AC64FA8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{422EFBFB-BBE2-412E-9A4B-05D5AC64FA8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{422EFBFB-BBE2-412E-9A4B-05D5AC64FA8B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

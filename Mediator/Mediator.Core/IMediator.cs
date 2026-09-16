@@ -4,5 +4,5 @@ namespace Mediator.Core;
 
 public interface IMediator
 {
-    Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken);
+    Task<TResponse> SendAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken);
 }
