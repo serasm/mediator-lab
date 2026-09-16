@@ -9,7 +9,7 @@ public class MediatorHandlersCache : IMediator
 {
     private readonly IServiceProvider _serviceProvider;
     
-    private readonly ConcurrentDictionary<Type, (Type RequestHandlerType, Delegate Invoker)> _requestHandlerInvokers =
+    private readonly ConcurrentDictionary<Type, (Type RequestHandlerType, Delegate Invoker)> _cache =
         new();
 
     public MediatorHandlersCache(IServiceProvider serviceProvider)
@@ -17,11 +17,11 @@ public class MediatorHandlersCache : IMediator
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
-    public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+    public Task<TResponse> SendAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
     {
         var requestType = request.GetType();
         var (handlerType, invokerObj) =
-            _requestHandlerInvokers.GetOrAdd(requestType, BuildRequestHandlerInfo<TResponse>(requestType));
+            _cache.GetOrAdd(requestType, BuildRequestHandlerInfo<TResponse>(requestType));
         
         var invoker = (Func<object, IRequest<TResponse>, CancellationToken, Task<TResponse>>)invokerObj;
 
