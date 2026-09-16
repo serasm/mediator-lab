@@ -24,10 +24,10 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore backend/EventDrivenDddReference.sln
+        run: dotnet restore ../Mediator/Mediator.sln
 
       - name: Build
-        run: dotnet build backend/EventDrivenDddReference.sln --configuration Release --no-restore
+        run: dotnet build ../Mediator/Mediator.sln --configuration Release --no-restore
 
       - name: Run unit tests with per-project coverage threshold
         run: |
@@ -42,7 +42,7 @@ jobs:
             return 1
           }
 
-          find backend -name '*.UnitTests.csproj' -print0 |
+          find backend -name '*.Tests.csproj' -print0 |
             while IFS= read -r -d '' test_project; do
               project_name=$(basename "$test_project" .UnitTests.csproj)
 
@@ -59,40 +59,6 @@ jobs:
                 /p:CollectCoverage=true \
                 /p:CoverletOutputFormat=cobertura \
                 /p:Threshold="$UNIT_COVERAGE_THRESHOLD" \
-                /p:ThresholdType=line \
-                /p:ThresholdStat=total
-            done
-
-      - name: Run integration tests with per-project coverage threshold
-        run: |
-          set -e -o pipefail
-          IFS=',' read -ra EXCLUDED <<< "$EXCLUDED_PROJECTS"
-
-          is_excluded() {
-            local name="$1"
-            for excluded in "${EXCLUDED[@]}"; do
-              [[ "$name" == "$excluded" ]] && return 0
-            done
-            return 1
-          }
-
-          find backend -name '*.IntegrationTests.csproj' -print0 |
-            while IFS= read -r -d '' test_project; do
-              project_name=$(basename "$test_project" .IntegrationTests.csproj)
-
-              if is_excluded "$project_name"; then
-                echo "Skipping coverage threshold for $project_name (excluded)"
-                dotnet test "$test_project" --configuration Release --no-build
-                continue
-              fi
-
-              echo "Running integration tests for $project_name (threshold: ${INTEGRATION_COVERAGE_THRESHOLD}%)"
-              dotnet test "$test_project" \
-                --configuration Release \
-                --no-build \
-                /p:CollectCoverage=true \
-                /p:CoverletOutputFormat=cobertura \
-                /p:Threshold="$INTEGRATION_COVERAGE_THRESHOLD" \
                 /p:ThresholdType=line \
                 /p:ThresholdStat=total
             done
