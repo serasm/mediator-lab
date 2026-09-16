@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mediator.HandlersCache.Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mediator.Basic.Tests", "Tests\Mediator.Basic.Tests\Mediator.Basic.Tests.csproj", "{422EFBFB-BBE2-412E-9A4B-05D5AC64FA8B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mediator.Benchmarks", "Benchmarks\Mediator.Benchmarks\Mediator.Benchmarks.csproj", "{66D4414E-C300-4D76-A8FD-587389059994}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{422EFBFB-BBE2-412E-9A4B-05D5AC64FA8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{422EFBFB-BBE2-412E-9A4B-05D5AC64FA8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{422EFBFB-BBE2-412E-9A4B-05D5AC64FA8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66D4414E-C300-4D76-A8FD-587389059994}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66D4414E-C300-4D76-A8FD-587389059994}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66D4414E-C300-4D76-A8FD-587389059994}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66D4414E-C300-4D76-A8FD-587389059994}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

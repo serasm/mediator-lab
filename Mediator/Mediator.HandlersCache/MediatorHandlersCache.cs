@@ -21,7 +21,7 @@ public class MediatorHandlersCache : IMediator
     {
         var requestType = request.GetType();
         var (handlerType, invokerObj) =
-            _cache.GetOrAdd(requestType, BuildRequestHandlerInfo<TResponse>(requestType));
+            _cache.GetOrAdd(requestType, _ => BuildRequestHandlerInfo<TResponse>(requestType));
         
         var invoker = (Func<object, IRequest<TResponse>, CancellationToken, Task<TResponse>>)invokerObj;
 
