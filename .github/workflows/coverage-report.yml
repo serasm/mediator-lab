@@ -1,0 +1,119 @@
+name: Coverage Report
+
+on:
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: write
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - run: dotnet restore backend/EventDrivenDddReference.sln
+      - run: dotnet build backend/EventDrivenDddReference.sln --configuration Release --no-restore
+
+      - name: Run tests with coverage
+        run: |
+          set -e
+          
+          mkdir -p coverage
+          
+          find backend \( \
+            -name '*.UnitTests.csproj' \
+            -o -name '*.IntegrationTests.csproj' \
+          ) -print0 |
+            while IFS= read -r -d '' test_project; do
+              echo "Running tests for: $test_project"
+          
+              filename=$(basename "$test_project")
+              project_name="${filename%.csproj}"
+          
+              dotnet test "$test_project" \
+                --configuration Release \
+                --no-build \
+                /p:CollectCoverage=true \
+                /p:CoverletOutput="$GITHUB_WORKSPACE/coverage/$project_name/" \
+                /p:CoverletOutputFormat="cobertura"
+            done
+
+      - name: Show coverage files
+        run: |
+          find "$GITHUB_WORKSPACE/coverage" -type f -print
+
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+      - name: Generate combined coverage report
+        run: |
+          reportgenerator \
+            "-reports:$GITHUB_WORKSPACE/coverage/**/*.xml" \
+            "-targetdir:$GITHUB_WORKSPACE/coverage/report" \
+            "-reporttypes:JsonSummary;Html;Cobertura"
+
+      - name: Read total coverage
+        id: coverage
+        run: |
+          percent=$(jq -r '.summary.linecoverage' coverage/report/Summary.json)
+          echo "Coverage: $percent%"
+          echo "percent=$percent" >> "$GITHUB_OUTPUT"
+
+      - name: Generate coverage badge
+        run: |
+          mkdir -p docs
+          
+          percent=$(jq -r '.summary.linecoverage' coverage/report/Summary.json)
+          
+          cat > "docs/coverage-${{ github.ref_name }}.svg" <<EOF
+          <svg xmlns="http://www.w3.org/2000/svg" width="130" height="20" viewBox="0 0 130 20" role="img" aria-label="coverage: ${percent}%">
+            <title>coverage: ${percent}%</title>
+            <rect width="130" height="20" rx="3" fill="#555"/>
+            <rect x="70" width="60" height="20" rx="3" fill="#4c1"/>
+            <rect x="65" width="5" height="20" fill="#555"/>
+            <text x="35" y="14" fill="#fff" text-anchor="middle" font-family="Verdana, Geneva, sans-serif" font-size="11">coverage</text>
+            <text x="100" y="14" fill="#fff" text-anchor="middle" font-family="Verdana, Geneva, sans-serif" font-size="11">${percent}%</text>
+          </svg>
+          EOF
+
+      - name: Verify coverage badge
+        run: |
+          echo "=== Generated badge ==="
+          cat "docs/coverage-${{ github.ref_name }}.svg"
+          
+          echo "=== Checking SVG ==="
+          if grep -q '\\<' "docs/coverage-${{ github.ref_name }}.svg"; then
+            echo "ERROR: SVG contains escaped < characters"
+            exit 1
+          fi
+          
+          if ! grep -q '^<svg' "docs/coverage-${{ github.ref_name }}.svg"; then
+            echo "ERROR: SVG does not start with <svg"
+            exit 1
+          fi
+          
+          echo "SVG looks valid"
+
+      - name: Commit updated coverage badge
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          
+          git add docs/coverage-${{ github.ref_name }}.svg
+          
+          if git diff --cached --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          
+          git commit -m "Update coverage badge [skip ci]"
+          
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"
