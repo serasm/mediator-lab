@@ -2,6 +2,10 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mediator.Core", "Mediator.Core\Mediator.Core.csproj", "{2AF07260-7D8B-4296-AB53-6363B65D91FE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mediator.Basic", "Mediator.Basic\Mediator.Basic.csproj", "{F5861132-3E0B-4149-A1BE-5E98A4A68A16}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mediator.HandlersCache", "Mediator.HandlersCache\Mediator.HandlersCache.csproj", "{8F6F53CE-59B5-4581-B81E-673A68CD9E28}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +16,13 @@ Global
 		{2AF07260-7D8B-4296-AB53-6363B65D91FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2AF07260-7D8B-4296-AB53-6363B65D91FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2AF07260-7D8B-4296-AB53-6363B65D91FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5861132-3E0B-4149-A1BE-5E98A4A68A16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5861132-3E0B-4149-A1BE-5E98A4A68A16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5861132-3E0B-4149-A1BE-5E98A4A68A16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5861132-3E0B-4149-A1BE-5E98A4A68A16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F6F53CE-59B5-4581-B81E-673A68CD9E28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F6F53CE-59B5-4581-B81E-673A68CD9E28}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F6F53CE-59B5-4581-B81E-673A68CD9E28}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F6F53CE-59B5-4581-B81E-673A68CD9E28}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
