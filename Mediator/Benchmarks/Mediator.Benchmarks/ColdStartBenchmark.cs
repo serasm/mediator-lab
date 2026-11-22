@@ -3,6 +3,7 @@ using Mediator.Basic;
 using Mediator.Core;
 using Mediator.Core.Requests;
 using Mediator.HandlersCache;
+using Mediator.PipelineFactoryOptimization.Mediator;
 using Mediator.PipelineOptimization;
 using Mediator.PipelineOptimization.Mediator;
 using Mediator.PipelineOptimization.Pipelines;
@@ -21,6 +22,7 @@ public class ColdStartBenchmarks
     private IMediator _basicMediator = null!;
     private IMediator _handlerCachedMediator = null!;
     private IMediator _pipelineOptimizedMediator = null!;
+    private IMediator _factoryOptimizedMediator = null!;
 
     [GlobalSetup]
     public void Setup()
@@ -44,8 +46,14 @@ public class ColdStartBenchmarks
         _pipelineOptimizedMediator =
             new PipelineMediator(
                 _provider,
-                new RequestHandlerInvokerCache(),
-                new PipelineFactory());
+                new PipelineOptimization.RequestHandlerInvokerCache(),
+                new PipelineOptimization.Pipelines.PipelineFactory());
+        
+        _factoryOptimizedMediator =
+            new FactoryOptimizationMediator(
+                _provider,
+                new PipelineFactoryOptimization.RequestHandlerInvokerCache(),
+                new PipelineFactoryOptimization.Pipelines.PipelineFactory());
     }
 
     [GlobalCleanup]
@@ -70,5 +78,11 @@ public class ColdStartBenchmarks
     public Task<int> PipelineOptimizedCold()
     {
         return _pipelineOptimizedMediator.SendAsync(_request, CancellationToken.None);
+    }
+    
+    [Benchmark]
+    public Task<int> FactoryOptimizedCold()
+    {
+        return _factoryOptimizedMediator.SendAsync(_request, CancellationToken.None);
     }
 }

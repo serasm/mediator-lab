@@ -5,6 +5,7 @@ using Mediator.Core.Requests;
 using Mediator.PipelineOptimization.Mediator;
 using Mediator.PipelineOptimization.Pipelines;
 using Mediator.Core.Pipelines;
+using Mediator.PipelineFactoryOptimization.Mediator;
 using Mediator.PipelineOptimization;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,7 +25,8 @@ public class PipelineBehaviorsBenchmarks
         ServiceLifetime.Transient)]
     public ServiceLifetime ServiceLifetime { get; set; }
 
-    private IMediator _mediator = null!;
+    private IMediator _pipelineOptimizationMediator = null!;
+    private IMediator _factoryOptimizationMediator = null!;
 
     private ServiceProvider _rootProvider = null!;
     private IServiceScope? _scope;
@@ -77,23 +79,39 @@ public class PipelineBehaviorsBenchmarks
             provider = _scope.ServiceProvider;
         }
 
-        _mediator = new PipelineMediator(
+        _pipelineOptimizationMediator = new PipelineMediator(
             provider,
-            new RequestHandlerInvokerCache(),
-            new PipelineFactory());
+            new PipelineOptimization.RequestHandlerInvokerCache(),
+            new PipelineOptimization.Pipelines.PipelineFactory());
+        
+        _factoryOptimizationMediator = new FactoryOptimizationMediator(
+            provider,
+            new PipelineFactoryOptimization.RequestHandlerInvokerCache(),
+            new PipelineFactoryOptimization.Pipelines.PipelineFactory());
 
         _request = new TestRequest();
 
         // Warm-up cache.
-        _mediator.SendAsync(_request, CancellationToken.None)
+        _pipelineOptimizationMediator.SendAsync(_request, CancellationToken.None)
+            .GetAwaiter()
+            .GetResult();
+        _factoryOptimizationMediator.SendAsync(_request, CancellationToken.None)
             .GetAwaiter()
             .GetResult();
     }
 
     [Benchmark]
-    public Task<int> SendAsync()
+    public Task<int> PipelineOptimized()
     {
-        return _mediator.SendAsync(
+        return _pipelineOptimizationMediator.SendAsync(
+            _request,
+            CancellationToken.None);
+    }
+    
+    [Benchmark]
+    public Task<int> FactoryOptimized()
+    {
+        return _factoryOptimizationMediator.SendAsync(
             _request,
             CancellationToken.None);
     }
