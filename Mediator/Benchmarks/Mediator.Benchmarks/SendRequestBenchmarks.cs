@@ -4,6 +4,7 @@ using Mediator.Basic;
 using Mediator.Core;
 using Mediator.Core.Requests;
 using Mediator.HandlersCache;
+using Mediator.PipelineFactoryOptimization.Mediator;
 using Mediator.PipelineOptimization;
 using Mediator.PipelineOptimization.Mediator;
 using Mediator.PipelineOptimization.Pipelines;
@@ -25,6 +26,7 @@ public class SendRequestBenchmarks
     private IMediator _basicMediator = null!;
     private IMediator _handlerCachedMediator = null!;
     private IMediator _pipelineOptimizedMediator = null!;
+    private IMediator _factoryOptimizedMediator = null!;
 
     private ServiceProvider _rootProvider = null!;
     private IServiceScope? _scope;
@@ -72,14 +74,20 @@ public class SendRequestBenchmarks
 
         _pipelineOptimizedMediator = new PipelineMediator(
             provider,
-            new RequestHandlerInvokerCache(),
-            new PipelineFactory());
+            new PipelineOptimization.RequestHandlerInvokerCache(),
+            new PipelineOptimization.Pipelines.PipelineFactory());
+        
+        _factoryOptimizedMediator = new FactoryOptimizationMediator(
+            provider,
+            new PipelineFactoryOptimization.RequestHandlerInvokerCache(),
+            new PipelineFactoryOptimization.Pipelines.PipelineFactory());
 
         _testRequest = new TestRequest();
 
         // Warm-up cache.
         _handlerCachedMediator.SendAsync(_testRequest, CancellationToken.None).GetAwaiter().GetResult();
         _pipelineOptimizedMediator.SendAsync(_testRequest, CancellationToken.None).GetAwaiter().GetResult();
+        _factoryOptimizedMediator.SendAsync(_testRequest, CancellationToken.None).GetAwaiter().GetResult();
     }
 
     [GlobalCleanup]
@@ -107,6 +115,14 @@ public class SendRequestBenchmarks
 
     [Benchmark]
     public Task<int> PipelineOptimized()
+    {
+        return _pipelineOptimizedMediator.SendAsync(
+            _testRequest,
+            CancellationToken.None);
+    }
+    
+    [Benchmark]
+    public Task<int> FactoryOptimized()
     {
         return _pipelineOptimizedMediator.SendAsync(
             _testRequest,
