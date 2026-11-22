@@ -18,8 +18,8 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - run: dotnet restore ../Mediator/Mediator.sln
-      - run: dotnet build ../Mediator/Mediator.sln --configuration Release --no-restore
+      - run: dotnet restore Mediator/Mediator.sln
+      - run: dotnet build Mediator/Mediator.sln --configuration Release --no-restore
 
       - name: Run tests with coverage
         run: |
@@ -27,7 +27,7 @@ jobs:
           
           mkdir -p coverage
           
-          find backend \( \
+          find Mediator \( \
             -name '*.Tests.csproj' \
           ) -print0 |
             while IFS= read -r -d '' test_project; do
