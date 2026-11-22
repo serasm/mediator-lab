@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Reflection;
-using Mediator.Core;
 
 namespace Mediator.HandlersCache.Tests;
 
