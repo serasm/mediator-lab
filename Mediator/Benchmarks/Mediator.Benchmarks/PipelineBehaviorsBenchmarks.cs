@@ -14,7 +14,7 @@ namespace Mediator.Benchmarks;
 
 [MemoryDiagnoser]
 [RankColumn]
-[SimpleJob(warmupCount: 5, iterationCount: 20, launchCount: 3)]
+[SimpleJob(warmupCount: 5, iterationCount: 25, launchCount: 8)]
 public class PipelineBehaviorsBenchmarks
 {
     [Params(0, 1, 3, 10)]

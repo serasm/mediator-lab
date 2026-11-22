@@ -7,7 +7,7 @@ namespace Mediator.Benchmarks;
 
 [MemoryDiagnoser]
 [RankColumn]
-[SimpleJob(warmupCount: 5, iterationCount: 20, launchCount: 5)]
+[SimpleJob(warmupCount: 10, iterationCount: 30, launchCount: 5)]
 public class HandlerInvocationBenchmarks
 {
     private readonly TestRequest _request = new();
