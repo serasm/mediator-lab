@@ -17,7 +17,7 @@ namespace Mediator.Benchmarks;
 [SimpleJob(warmupCount: 5, iterationCount: 25, launchCount: 8)]
 public class PipelineBehaviorsBenchmarks
 {
-    [Params(0, 1, 3, 10)]
+    [Params(0, 1, 3, 10, 20, 50, 100)]
     public int PipelineCount { get; set; }
 
     private ServiceProvider _provider = null!;
