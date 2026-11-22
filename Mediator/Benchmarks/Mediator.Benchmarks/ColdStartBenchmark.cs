@@ -1,88 +1,59 @@
 using BenchmarkDotNet.Attributes;
-using Mediator.Basic;
+using BenchmarkDotNet.Engines;
 using Mediator.Core;
 using Mediator.Core.Requests;
-using Mediator.HandlersCache;
-using Mediator.PipelineFactoryOptimization.Mediator;
-using Mediator.PipelineOptimization;
-using Mediator.PipelineOptimization.Mediator;
-using Mediator.PipelineOptimization.Pipelines;
 using Microsoft.Extensions.DependencyInjection;
+using BasicMediator = Mediator.Basic.MediatorBasic;
+using HandlersCacheMediator = Mediator.HandlersCache.MediatorHandlersCache;
+using PipelineMediator = Mediator.PipelineOptimization.Mediator.PipelineMediator;
+using PipelineInvokerCache = Mediator.PipelineOptimization.RequestHandlerInvokerCache;
+using PipelineFactory = Mediator.PipelineOptimization.Pipelines.PipelineFactory;
+using FactoryMediator = Mediator.PipelineFactoryOptimization.Mediator.FactoryOptimizationMediator;
+using FactoryInvokerCache = Mediator.PipelineFactoryOptimization.RequestHandlerInvokerCache;
+using FactoryPipelineFactory = Mediator.PipelineFactoryOptimization.Pipelines.PipelineFactory;
 
 namespace Mediator.Benchmarks;
 
+// każdy benchmark to osobny proces z jednym wywołaniem
 [MemoryDiagnoser]
-[RankColumn]
-[SimpleJob(warmupCount: 5, iterationCount: 20, launchCount: 10)]
+[SimpleJob(RunStrategy.ColdStart, launchCount: 10, warmupCount: 0, iterationCount: 1)]
 public class ColdStartBenchmarks
 {
     private ServiceProvider _provider = null!;
-    private TestRequest _request = null!;
-
-    private IMediator _basicMediator = null!;
-    private IMediator _handlerCachedMediator = null!;
-    private IMediator _pipelineOptimizedMediator = null!;
-    private IMediator _factoryOptimizedMediator = null!;
+    private IMediator _basic = null!;
+    private IMediator _handlerCache = null!;
+    private IMediator _pipelineOptimization = null!;
+    private IMediator _pipelineFactoryOptimization = null!;
+    private readonly TestRequest _request = new();
 
     [GlobalSetup]
     public void Setup()
     {
         var services = new ServiceCollection();
-
-        services.AddSingleton<
-            IRequestHandler<TestRequest, int>,
-            TestRequestHandler>();
-
+        services.AddSingleton<IRequestHandler<TestRequest, int>, TestRequestHandler>();
         _provider = services.BuildServiceProvider();
-        _request = new TestRequest();
-    }
 
-    [IterationSetup]
-    public void SetupIteration()
-    {
-        _basicMediator = new MediatorBasic(_provider);
-        _handlerCachedMediator = new MediatorHandlersCache(_provider);
-
-        _pipelineOptimizedMediator =
-            new PipelineMediator(
-                _provider,
-                new PipelineOptimization.RequestHandlerInvokerCache(),
-                new PipelineOptimization.Pipelines.PipelineFactory());
-        
-        _factoryOptimizedMediator =
-            new FactoryOptimizationMediator(
-                _provider,
-                new PipelineFactoryOptimization.RequestHandlerInvokerCache(),
-                new PipelineFactoryOptimization.Pipelines.PipelineFactory());
+        _basic = new BasicMediator(_provider);
+        _handlerCache = new HandlersCacheMediator(_provider);
+        _pipelineOptimization = new PipelineMediator(
+            _provider, new PipelineInvokerCache(), new PipelineFactory());
+        _pipelineFactoryOptimization = new FactoryMediator(
+            _provider, new FactoryInvokerCache(), new FactoryPipelineFactory());
+        // celowo bez żadnego SendAsync: pierwsze wywołanie ma być w benchmarku
     }
 
     [GlobalCleanup]
-    public void Cleanup()
-    {
-        _provider.Dispose();
-    }
+    public void Cleanup() => _provider.Dispose();
 
     [Benchmark(Baseline = true)]
-    public Task<int> Basic()
-    {
-        return _basicMediator.SendAsync(_request, CancellationToken.None);
-    }
+    public Task<int> Basic() => _basic.SendAsync(_request, CancellationToken.None);
 
     [Benchmark]
-    public Task<int> HandlerCachedCold()
-    {
-        return _handlerCachedMediator.SendAsync(_request, CancellationToken.None);
-    }
+    public Task<int> HandlersCache() => _handlerCache.SendAsync(_request, CancellationToken.None);
 
     [Benchmark]
-    public Task<int> PipelineOptimizedCold()
-    {
-        return _pipelineOptimizedMediator.SendAsync(_request, CancellationToken.None);
-    }
-    
+    public Task<int> PipelineOptimization() => _pipelineOptimization.SendAsync(_request, CancellationToken.None);
+
     [Benchmark]
-    public Task<int> FactoryOptimizedCold()
-    {
-        return _factoryOptimizedMediator.SendAsync(_request, CancellationToken.None);
-    }
+    public Task<int> PipelineFactoryOptimization() => _pipelineFactoryOptimization.SendAsync(_request, CancellationToken.None);
 }
