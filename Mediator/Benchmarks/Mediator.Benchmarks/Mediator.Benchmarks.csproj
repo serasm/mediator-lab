@@ -14,6 +14,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\Mediator.Basic\Mediator.Basic.csproj" />
       <ProjectReference Include="..\..\Mediator.Core\Mediator.Core.csproj" />
+      <ProjectReference Include="..\..\Mediator.PipelineOptimization\Mediator.PipelineOptimization.csproj" />
       <ProjectReference Include="..\..\Tests\Mediator.HandlersCache.Tests\Mediator.HandlersCache.Tests.csproj" />
     </ItemGroup>
 

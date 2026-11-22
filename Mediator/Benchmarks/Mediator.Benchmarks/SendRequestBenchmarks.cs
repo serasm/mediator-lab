@@ -1,8 +1,12 @@
+
 using BenchmarkDotNet.Attributes;
 using Mediator.Basic;
 using Mediator.Core;
 using Mediator.Core.Requests;
 using Mediator.HandlersCache;
+using Mediator.PipelineOptimization;
+using Mediator.PipelineOptimization.Mediator;
+using Mediator.PipelineOptimization.Pipelines;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Mediator.Benchmarks;
@@ -17,10 +21,13 @@ public class SendRequestBenchmarks
         ServiceLifetime.Scoped,
         ServiceLifetime.Transient)]
     public ServiceLifetime ServiceLifetime { get; set; }
-    
+
     private IMediator _basicMediator = null!;
     private IMediator _handlerCachedMediator = null!;
-    private IServiceScope _scope = null!;
+    private IMediator _pipelineOptimizedMediator = null!;
+
+    private ServiceProvider _rootProvider = null!;
+    private IServiceScope? _scope;
 
     private TestRequest _testRequest = null!;
 
@@ -32,47 +39,77 @@ public class SendRequestBenchmarks
         switch (ServiceLifetime)
         {
             case ServiceLifetime.Scoped:
-                services.AddScoped<IRequestHandler<TestRequest, int>, TestRequestHandler>();
+                services.AddScoped<
+                    IRequestHandler<TestRequest, int>,
+                    TestRequestHandler>();
                 break;
-            
+
             case ServiceLifetime.Singleton:
-                services.AddSingleton<IRequestHandler<TestRequest, int>, TestRequestHandler>();
+                services.AddSingleton<
+                    IRequestHandler<TestRequest, int>,
+                    TestRequestHandler>();
                 break;
 
             case ServiceLifetime.Transient:
-                services.AddTransient<IRequestHandler<TestRequest, int>, TestRequestHandler>();
+                services.AddTransient<
+                    IRequestHandler<TestRequest, int>,
+                    TestRequestHandler>();
                 break;
         }
-        
-        IServiceProvider provider = services.BuildServiceProvider();
+
+        _rootProvider = services.BuildServiceProvider();
+
+        IServiceProvider provider = _rootProvider;
 
         if (ServiceLifetime == ServiceLifetime.Scoped)
         {
-            _scope = provider.CreateScope();
+            _scope = _rootProvider.CreateScope();
             provider = _scope.ServiceProvider;
         }
 
         _basicMediator = new MediatorBasic(provider);
         _handlerCachedMediator = new MediatorHandlersCache(provider);
-        
+
+        _pipelineOptimizedMediator = new PipelineMediator(
+            provider,
+            new RequestHandlerInvokerCache(),
+            new PipelineFactory());
+
         _testRequest = new TestRequest();
+
+        // Warm-up cache.
+        _handlerCachedMediator.SendAsync(_testRequest, CancellationToken.None).GetAwaiter().GetResult();
+        _pipelineOptimizedMediator.SendAsync(_testRequest, CancellationToken.None).GetAwaiter().GetResult();
     }
 
     [GlobalCleanup]
     public void Cleanup()
     {
         _scope?.Dispose();
+        _rootProvider.Dispose();
     }
 
     [Benchmark(Baseline = true)]
     public Task<int> Basic()
     {
-        return _basicMediator.SendAsync(_testRequest, CancellationToken.None);
+        return _basicMediator.SendAsync(
+            _testRequest,
+            CancellationToken.None);
     }
-    
+
     [Benchmark]
-    public Task<int> Cached()
+    public Task<int> HandlerCached()
     {
-        return _handlerCachedMediator.SendAsync(_testRequest, CancellationToken.None);
+        return _handlerCachedMediator.SendAsync(
+            _testRequest,
+            CancellationToken.None);
+    }
+
+    [Benchmark]
+    public Task<int> PipelineOptimized()
+    {
+        return _pipelineOptimizedMediator.SendAsync(
+            _testRequest,
+            CancellationToken.None);
     }
 }
