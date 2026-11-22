@@ -56,8 +56,13 @@ public class HandlerInvocationBenchmarks
                 cancellationTokenParam)
             .Compile();
     }
+    
+    private readonly IRequestHandler<TestRequest, int> _handlerViaInterface = new TestRequestHandler();
 
     [Benchmark(Baseline = true)]
+    public Task<int> DirectViaInterface() => _handlerViaInterface.HandleAsync(_request, CancellationToken.None);
+
+    [Benchmark]
     public Task<int> Direct()
     {
         return _handler.HandleAsync(
@@ -85,8 +90,6 @@ public class HandlerInvocationBenchmarks
     [Benchmark]
     public Task<int> InvokeWithMethodInvoker()
     {
-        return (Task<int>)_methodInvoker.Invoke(
-            _handler,
-            new object?[] { _request, CancellationToken.None })!;
+        return (Task<int>)_methodInvoker.Invoke(_handler, _request, CancellationToken.None)!;
     }
 }
