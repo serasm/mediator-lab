@@ -16,7 +16,7 @@ namespace Mediator.Benchmarks;
 
 [MemoryDiagnoser]
 [RankColumn]
-[SimpleJob(warmupCount: 5, iterationCount: 20, launchCount: 3)]
+[SimpleJob(warmupCount: 8, iterationCount: 25, launchCount: 5)]
 public class SendRequestBenchmarks
 {
     [Params(ServiceLifetime.Singleton, ServiceLifetime.Scoped, ServiceLifetime.Transient)]

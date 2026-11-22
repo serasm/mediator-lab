@@ -16,7 +16,7 @@ namespace Mediator.Benchmarks;
 
 // każdy benchmark to osobny proces z jednym wywołaniem
 [MemoryDiagnoser]
-[SimpleJob(RunStrategy.ColdStart, launchCount: 10, warmupCount: 0, iterationCount: 1)]
+[SimpleJob(RunStrategy.ColdStart, launchCount: 15, warmupCount: 0, iterationCount: 1)]
 public class ColdStartBenchmarks
 {
     private ServiceProvider _provider = null!;
