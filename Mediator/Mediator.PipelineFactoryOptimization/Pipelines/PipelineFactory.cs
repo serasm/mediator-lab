@@ -46,12 +46,12 @@ public class PipelineFactory : IPipelineFactory
             Func<Task<TResponse>> next = async () =>
                 await handlerInvoker.Invoke(handlerObject, request, cancellationToken);
 
-            foreach (var pipeline in pipelines.Reverse())
+            for(int i = pipelines.Length - 1; i >= 0; i--)
             {
                 var current = next;
 
                 next = () =>
-                    pipeline.HandleAsync(
+                    pipelines[i].HandleAsync(
                         (TRequest)request,
                         cancellationToken,
                         current);
