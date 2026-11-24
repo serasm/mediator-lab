@@ -43,9 +43,8 @@ public class PipelineFactory : IPipelineFactory
     {
         return (serviceProvider, handlerObject, request, cancellationToken) =>
         {
-            var pipelines = serviceProvider
-                .GetServices<IPipelineBehavior<TRequest, TResponse>>()
-                .ToArray();
+            var services = serviceProvider.GetServices<IPipelineBehavior<TRequest, TResponse>>();
+            var pipelines = services as IPipelineBehavior<TRequest, TResponse>[] ?? services.ToArray();
 
             if (pipelines.Length == 0)
             {
