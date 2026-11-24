@@ -11,60 +11,53 @@ public class PipelineFactory : IPipelineFactory
     private readonly ConcurrentDictionary<(Type RequestType, Type ResponseType), Delegate> _cache = new();
 
     private static readonly MethodInfo BuildMethod =
-        typeof(PipelineFactory).GetMethod(nameof(Build), BindingFlags.Static | BindingFlags.NonPublic)
+        typeof(PipelineFactory)
+            .GetMethod(nameof(Build), BindingFlags.Instance | BindingFlags.NonPublic)
         ?? throw new InvalidOperationException("Method 'Build' not found");
 
     public Delegate GetOrAdd<TResponse>(
         Type requestType,
         Func<object, IRequest<TResponse>, CancellationToken, Task<TResponse>> handlerInvoker)
-        => _cache.GetOrAdd(
-            (requestType, typeof(TResponse)),
-            static (key, invoker) => BuildClosedPipeline(key.RequestType, invoker),
-            handlerInvoker);
-
-    private static Delegate BuildClosedPipeline<TResponse>(
-        Type requestType,
-        Func<object, IRequest<TResponse>, CancellationToken, Task<TResponse>> handlerInvoker)
-        => (Delegate)BuildMethod
-            .MakeGenericMethod(requestType, typeof(TResponse))
-            .Invoke(null, new object[] { handlerInvoker })!;
-
-    private static Func<IServiceProvider, object, IRequest<TResponse>, CancellationToken, Task<TResponse>>
-        Build<TRequest, TResponse>(
-            Func<object, IRequest<TResponse>, CancellationToken, Task<TResponse>> handlerInvoker)
-        where TRequest : IRequest<TResponse>
     {
-        return (serviceProvider, handler, request, cancellationToken) =>
-        {
-            var services = serviceProvider.GetServices<IPipelineBehavior<TRequest, TResponse>>();
-            var behaviors = services as IPipelineBehavior<TRequest, TResponse>[] ?? services.ToArray();
-
-            if (behaviors.Length == 0)
-                return handlerInvoker(handler, request, cancellationToken);
-
-            return new Step<TRequest, TResponse>(
-                behaviors, 0, handlerInvoker, handler, (TRequest)request, cancellationToken).Invoke();
-        };
+        return _cache.GetOrAdd(
+            (requestType, typeof(TResponse)),
+            _ => BuildClosedPipeline<TResponse>(requestType, handlerInvoker));
     }
 
-    private sealed class Step<TRequest, TResponse>(
-        IPipelineBehavior<TRequest, TResponse>[] behaviors,
-        int index,
-        Func<object, IRequest<TResponse>, CancellationToken, Task<TResponse>> handlerInvoker,
-        object handler,
-        TRequest request,
-        CancellationToken cancellationToken)
+    private Delegate BuildClosedPipeline<TResponse>(
+        Type requestType,
+        Func<object, IRequest<TResponse>, CancellationToken, Task<TResponse>> handlerInvoker)
+    {
+        var method = BuildMethod.MakeGenericMethod(requestType, typeof(TResponse));
+
+        return (Delegate)method.Invoke(this, new object[] { handlerInvoker })!;
+    }
+
+    private Func<IServiceProvider, object, IRequest<TResponse>, CancellationToken, Task<TResponse>> Build<TRequest, TResponse>(
+        Func<object, IRequest<TResponse>, CancellationToken, Task<TResponse>> handlerInvoker)
         where TRequest : IRequest<TResponse>
     {
-        public Task<TResponse> Invoke()
+        return (serviceProvider, handlerObject, request, cancellationToken) =>
         {
-            if (index == behaviors.Length)
-                return handlerInvoker(handler, request, cancellationToken);
+            var pipelines = serviceProvider
+                .GetServices<IPipelineBehavior<TRequest, TResponse>>()
+                .ToArray();
 
-            var next = new Step<TRequest, TResponse>(
-                behaviors, index + 1, handlerInvoker, handler, request, cancellationToken);
+            Func<Task<TResponse>> next = async () =>
+                await handlerInvoker.Invoke(handlerObject, request, cancellationToken);
 
-            return behaviors[index].HandleAsync(request, cancellationToken, next.Invoke);
-        }
+            for(int i = pipelines.Length - 1; i >= 0; i--)
+            {
+                var current = next;
+
+                next = () =>
+                    pipelines[i].HandleAsync(
+                        (TRequest)request,
+                        cancellationToken,
+                        current);
+            }
+
+            return next();
+        };
     }
 }
