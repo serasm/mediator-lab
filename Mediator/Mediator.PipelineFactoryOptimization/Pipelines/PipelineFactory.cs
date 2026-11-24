@@ -42,29 +42,28 @@ public class PipelineFactory : IPipelineFactory
             if (behaviors.Length == 0)
                 return handlerInvoker(handler, request, cancellationToken);
 
-            return new Step<TRequest, TResponse>(
-                behaviors, 0, handlerInvoker, handler, (TRequest)request, cancellationToken).Invoke();
+            return new Call<TRequest, TResponse>(
+                behaviors, handlerInvoker, handler, (TRequest)request, cancellationToken).Run(0);
         };
     }
 
-    private sealed class Step<TRequest, TResponse>(
+    private sealed class Call<TRequest, TResponse>(
         IPipelineBehavior<TRequest, TResponse>[] behaviors,
-        int index,
         Func<object, IRequest<TResponse>, CancellationToken, Task<TResponse>> handlerInvoker,
         object handler,
         TRequest request,
         CancellationToken cancellationToken)
         where TRequest : IRequest<TResponse>
     {
-        public Task<TResponse> Invoke()
+        public Task<TResponse> Run(int index)
+            => index == behaviors.Length
+                ? handlerInvoker(handler, request, cancellationToken)
+                : behaviors[index].HandleAsync(
+                    request, cancellationToken, new Next(this, index + 1).Invoke);
+
+        private sealed class Next(Call<TRequest, TResponse> call, int index)
         {
-            if (index == behaviors.Length)
-                return handlerInvoker(handler, request, cancellationToken);
-
-            var next = new Step<TRequest, TResponse>(
-                behaviors, index + 1, handlerInvoker, handler, request, cancellationToken);
-
-            return behaviors[index].HandleAsync(request, cancellationToken, next.Invoke);
+            public Task<TResponse> Invoke() => call.Run(index);
         }
     }
 }

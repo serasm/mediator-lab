@@ -9,36 +9,30 @@ namespace Mediator.PipelineOptimization.Pipelines;
 public class PipelineFactory : IPipelineFactory
 {
     private readonly ConcurrentDictionary<(Type RequestType, Type ResponseType), Delegate> _cache = new();
-    
-    private static readonly MethodInfo BuildMethod = 
+
+    private static readonly MethodInfo BuildMethod =
         typeof(PipelineFactory)
-            .GetMethod(
-                nameof(Build),
-                BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetMethod(nameof(Build), BindingFlags.Static | BindingFlags.NonPublic)
         ?? throw new InvalidOperationException("Method 'Build' not found");
-    
+
     public Delegate GetOrAdd<TResponse>(
         Type requestType,
         Func<object, IRequest<TResponse>, CancellationToken, Task<TResponse>> handlerInvoker)
-    {
-        return _cache.GetOrAdd(
+        => _cache.GetOrAdd(
             (requestType, typeof(TResponse)),
-            _ => BuildClosedPipeline<TResponse>(requestType, handlerInvoker));
-    }
+            static (key, invoker) => BuildClosedPipeline(key.RequestType, invoker),
+            handlerInvoker);
 
-    private Delegate BuildClosedPipeline<TResponse>(
+    private static Delegate BuildClosedPipeline<TResponse>(
         Type requestType,
         Func<object, IRequest<TResponse>, CancellationToken, Task<TResponse>> handlerInvoker)
-    {
-        var method = BuildMethod.MakeGenericMethod(
-            requestType,
-            typeof(TResponse));
-        
-        return (Delegate)method.Invoke(this, new object[] { handlerInvoker });
-    }
+        => (Delegate)BuildMethod
+            .MakeGenericMethod(requestType, typeof(TResponse))
+            .Invoke(null, new object[] { handlerInvoker })!;
 
-    private Func<IServiceProvider, object, IRequest<TResponse>, CancellationToken, Task<TResponse>> Build<TRequest, TResponse>(
-        Func<object, IRequest<TResponse>, CancellationToken, Task<TResponse>> handlerInvoker)
+    private static Func<IServiceProvider, object, IRequest<TResponse>, CancellationToken, Task<TResponse>>
+        Build<TRequest, TResponse>(
+            Func<object, IRequest<TResponse>, CancellationToken, Task<TResponse>> handlerInvoker)
         where TRequest : IRequest<TResponse>
     {
         return (serviceProvider, handlerObject, request, cancellationToken) =>
@@ -47,26 +41,31 @@ public class PipelineFactory : IPipelineFactory
             var pipelines = services as IPipelineBehavior<TRequest, TResponse>[] ?? services.ToArray();
 
             if (pipelines.Length == 0)
-            {
                 return handlerInvoker(handlerObject, request, cancellationToken);
-            }
 
-            int index = -1;
-
-            Task<TResponse> Next()
-            {
-                index++;
-
-                if (index < pipelines.Length)
-                {
-                    return pipelines[index]
-                        .HandleAsync((TRequest)request, cancellationToken, Next);
-                }
-                
-                return handlerInvoker(handlerObject, request, cancellationToken);
-            }
-
-            return Next();
+            return RunPipeline(pipelines, handlerInvoker, handlerObject, request, cancellationToken);
         };
+    }
+
+    private static Task<TResponse> RunPipeline<TRequest, TResponse>(
+        IPipelineBehavior<TRequest, TResponse>[] pipelines,
+        Func<object, IRequest<TResponse>, CancellationToken, Task<TResponse>> handlerInvoker,
+        object handlerObject,
+        IRequest<TResponse> request,
+        CancellationToken cancellationToken)
+        where TRequest : IRequest<TResponse>
+    {
+        int index = -1;
+
+        Task<TResponse> Next()
+        {
+            index++;
+
+            return index < pipelines.Length
+                ? pipelines[index].HandleAsync((TRequest)request, cancellationToken, Next)
+                : handlerInvoker(handlerObject, request, cancellationToken);
+        }
+
+        return Next();
     }
 }
